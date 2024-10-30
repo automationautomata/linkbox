@@ -65,7 +65,6 @@ func main() {
 	}
 	if err := checkPathes(*srcFlag, *dirFlag); err != nil {
 		fmt.Println(err.Error())
-		return
 	}
 
 	file, err := os.Open(*srcFlag)

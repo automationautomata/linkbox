@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -11,51 +12,59 @@ import (
 	"sync"
 )
 
-func CheckPathes(srcPath string, dirPath string) bool {
+// checkPathes - проверяет пути на корректность,
+// если папки dirPath не существует, то создает ее
+func checkPathes(srcPath string, dirPath string) error {
 	_, err := os.Stat(srcPath)
 	if err != nil {
-		fmt.Println("File doesn't exist")
-		return false
+		return errors.New("Файл не существует")
 	}
-
-	_, err = os.Stat(dirPath)
-	if err != nil {
-		fmt.Println("Directory doesn't exist")
+	if _, err = os.Stat(dirPath); err != nil {
 		if err = os.Mkdir(dirPath, os.ModePerm); err != nil {
-			fmt.Println("Directory can't be created")
-			return false
+			return errors.New("Папка не может быть создана")
 		}
+		return errors.New("Папка не существует")
 	}
-	return true
+	return nil
 }
 
-func GetPageData(address string, dirPath string) {
+// getPageData - делает GET-запрос на сайт address,
+// если запрос был успешен, сохраняет ответ в папку dirPath
+func getPageData(address string, dirPath string) error {
 	resp, err := http.Get("http://" + address)
 	if err != nil {
-		fmt.Println(address, err.Error())
-		return
+		return errors.New("Адрес " + address + " не корректен")
 	}
 	defer resp.Body.Close()
 
 	file, err := os.Create(filepath.Join(dirPath, address+".html"))
 	if err != nil {
-		fmt.Println("File for", address, "can't be created")
-		return
+		return errors.New("Файл для сайта " + address + "не может быть создан")
 	}
 	defer file.Close()
 
 	_, err = io.Copy(file, resp.Body)
 	if err != nil {
-		fmt.Println("File for", address, "can't be filled", err.Error())
+		return errors.New("Файл для сайта " + address + "не можен быть заполнен")
 	}
+	return nil
 }
 
 func main() {
 	srcFlag := flag.String("src", "", "src path ")
 	dirFlag := flag.String("dir", "", "dir path")
 	flag.Parse()
-
-	if !CheckPathes(*srcFlag, *dirFlag) {
+	if *srcFlag == "" {
+		fmt.Println("Используйте --src, чтобы указать путь до файла со ссылками")
+		return
+	}
+	if *dirFlag == "" {
+		fmt.Println("Используйте --dir, чтобы указать путь для папки с файлами,")
+		fmt.Println("если такого пути не существует, то он будет создан автоматически")
+		return
+	}
+	if err := checkPathes(*srcFlag, *dirFlag); err != nil {
+		fmt.Println(err.Error())
 		return
 	}
 
@@ -71,11 +80,17 @@ func main() {
 	for scanner.Scan() {
 		wg.Add(1)
 		go func(address string) {
-			GetPageData(address, *dirFlag)
+			err := getPageData(address, *dirFlag)
+			if err != nil {
+				fmt.Println(err.Error())
+			} else {
+				fmt.Println("Выполненно для " + address)
+			}
 			wg.Done()
 		}(scanner.Text())
 	}
 
 	wg.Wait()
-	fmt.Println(*srcFlag, *dirFlag)
+	fmt.Println("Завершено")
+	println()
 }

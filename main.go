@@ -52,23 +52,25 @@ func getPageData(address string, dirPath string) error {
 }
 
 func main() {
-	srcFlag := flag.String("src", "", "src path ")
-	dirFlag := flag.String("dir", "", "dir path")
+	const src_hint = "Используйте --src, чтобы указать путь до файла со ссылками"
+	const dir_hint = "Используйте --dir, чтобы указать путь для папки с файлами," +
+		"если такого пути не существует, то он будет создан автоматически"
+
+	srcFlag := flag.String("src", "", src_hint)
+	dirFlag := flag.String("dir", "", dir_hint)
 	flag.Parse()
-	start := time.Now()
-	defer func() { fmt.Println(time.Since(start)) }()
+
+	defer func(start time.Time) {
+		fmt.Println(time.Since(start))
+	}(time.Now())
 
 	if *srcFlag == "" {
-		fmt.Println("Используйте --src, чтобы указать путь до файла со ссылками")
+		fmt.Println(src_hint)
 		return
 	}
 	if *dirFlag == "" {
-		fmt.Println("Используйте --dir, чтобы указать путь для папки с файлами,")
-		fmt.Println("если такого пути не существует, то он будет создан автоматически")
+		fmt.Println(dir_hint)
 		return
-	}
-	if err := checkPathes(*srcFlag, *dirFlag); err != nil {
-		fmt.Println(err.Error())
 	}
 
 	file, err := os.Open(*srcFlag)
@@ -77,6 +79,10 @@ func main() {
 		return
 	}
 	defer file.Close()
+
+	if err := checkPathes(*srcFlag, *dirFlag); err != nil {
+		fmt.Println(err.Error())
+	}
 
 	var wg sync.WaitGroup
 	scanner := bufio.NewScanner(file)

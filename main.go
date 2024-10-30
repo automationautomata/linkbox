@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 )
 
 // checkPathes - проверяет пути на корректность,
@@ -54,6 +55,10 @@ func main() {
 	srcFlag := flag.String("src", "", "src path ")
 	dirFlag := flag.String("dir", "", "dir path")
 	flag.Parse()
+	start := time.Now()
+	// Код для измерения
+	defer func() { fmt.Println(time.Since(start)) }()
+
 	if *srcFlag == "" {
 		fmt.Println("Используйте --src, чтобы указать путь до файла со ссылками")
 		return

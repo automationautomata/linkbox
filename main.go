@@ -92,5 +92,4 @@ func main() {
 
 	wg.Wait()
 	fmt.Println("Завершено")
-	println()
 }

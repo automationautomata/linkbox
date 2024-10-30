@@ -55,8 +55,7 @@ func main() {
 	srcFlag := flag.String("src", "", "src path ")
 	dirFlag := flag.String("dir", "", "dir path")
 	flag.Parse()
-	start := time.Now()
-	// Код для измерения
+	startExec := time.Now()
 	defer func() { fmt.Println(time.Since(start)) }()
 
 	if *srcFlag == "" {
